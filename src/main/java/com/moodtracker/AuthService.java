@@ -29,17 +29,16 @@ public class AuthService {
         }
     }
 
-    public static boolean register(String username, String password) {
-        String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-        try (Connection conn = DatabaseHelper.getConnection();
-                
-        PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, username);
-            pstmt.setString(2, hashPassword(password));
-            pstmt.executeUpdate();
-            return true; // Pendaftaran berhasil
-        } catch (SQLException e) {
-            System.err.println("Error saat register/login: " + e.getMessage());
+    public static boolean register(String username, String password, String gender) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            String sql = "INSERT INTO users (username, password, gender) VALUES (?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+            stmt.setString(2, hashPassword(password));
+            stmt.setString(3, gender);
+            stmt.executeUpdate();
+            return true;
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }

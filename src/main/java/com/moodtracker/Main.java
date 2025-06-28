@@ -15,7 +15,6 @@ public class Main {
         loginFrame.setSize(700, 600);
         loginFrame.setLocationRelativeTo(null);
 
-        // Panel utama untuk background gradient
         JPanel bgPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -32,7 +31,6 @@ public class Main {
         };
         bgPanel.setLayout(new GridBagLayout());
 
-        // Panel login tengah dengan sudut membulat
         JPanel loginPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -74,23 +72,10 @@ public class Main {
         usernameField.setBackground(Color.WHITE);
         usernameField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         usernameField.setOpaque(true);
-        usernameField.setBorder(BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true));
-        usernameField.setFocusable(true);
         usernameField.setMargin(new Insets(0, 10, 0, 10));
         usernameField.setColumns(20);
         usernameField.setCaretColor(Color.BLACK);
         usernameField.setForeground(Color.BLACK);
-        usernameField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(),
-            BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true)
-        ));
-        usernameField.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
-            @Override
-            protected void paintSafely(Graphics g) {
-                super.paintSafely(g);
-                ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-        });
         loginPanel.add(usernameField);
 
         // Password
@@ -105,21 +90,9 @@ public class Main {
         passwordField.setBackground(Color.WHITE);
         passwordField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         passwordField.setOpaque(true);
-        passwordField.setBorder(BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true));
         passwordField.setMargin(new Insets(0, 10, 0, 10));
         passwordField.setCaretColor(Color.BLACK);
         passwordField.setForeground(Color.BLACK);
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(),
-            BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true)
-        ));
-        passwordField.setUI(new javax.swing.plaf.basic.BasicPasswordFieldUI() {
-            @Override
-            protected void paintSafely(Graphics g) {
-                super.paintSafely(g);
-                ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-        });
         loginPanel.add(passwordField);
 
         // Tombol Masuk
@@ -161,7 +134,8 @@ public class Main {
 
             if (AuthService.login(username, password)) {
                 loginFrame.dispose();
-                launchMainApp(username);
+                String gender = DatabaseHelper.getGenderByUsername(username);
+                launchMainApp(username, gender);
             } else {
                 JOptionPane.showMessageDialog(loginFrame, "Login gagal! Periksa username dan password Anda.");
             }
@@ -173,21 +147,19 @@ public class Main {
             showRegisterScreen();
         });
 
-        // Tambahkan panel login ke tengah background
         bgPanel.add(loginPanel, new GridBagConstraints());
-
         loginFrame.setContentPane(bgPanel);
         loginFrame.setResizable(false);
         loginFrame.setVisible(true);
     }
 
-    private static void launchMainApp(String username) {
+    private static void launchMainApp(String username, String gender) {
         JFrame frame = new JFrame("Mood Tracker");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(900, 700);
         frame.setLocationRelativeTo(null);
 
-        MoodPanel moodPanel = new MoodPanel(username);
+        MoodPanel moodPanel = new MoodPanel(username, gender);
         frame.add(moodPanel);
 
         frame.setVisible(true);
@@ -199,7 +171,6 @@ public class Main {
         registerFrame.setSize(700, 600);
         registerFrame.setLocationRelativeTo(null);
 
-        // Panel dan layout sama seperti login
         JPanel bgPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -230,7 +201,7 @@ public class Main {
         registerPanel.setPreferredSize(new Dimension(500, 450));
         registerPanel.setLayout(null);
 
-        // Logo, judul, field username, password, dll sama
+        // Logo
         JLabel logoLabel = new JLabel();
         ImageIcon logoIcon = new ImageIcon("src/MoodTrackerApp/assets/logo.png");
         Image logoImage = logoIcon.getImage().getScaledInstance(259, 134, Image.SCALE_SMOOTH);
@@ -238,12 +209,14 @@ public class Main {
         logoLabel.setBounds(120, 5, 259, 134);
         registerPanel.add(logoLabel);
 
+        // Judul
         JLabel titleLabel = new JLabel("Buat Akun");
         titleLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 32));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titleLabel.setBounds(100, 100, 300, 40);
         registerPanel.add(titleLabel);
 
+        // Username
         JLabel userLabel = new JLabel("Username");
         userLabel.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
         userLabel.setBounds(70, 160, 100, 20);
@@ -255,25 +228,13 @@ public class Main {
         usernameField.setBackground(Color.WHITE);
         usernameField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         usernameField.setOpaque(true);
-        usernameField.setBorder(BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true));
-        usernameField.setFocusable(true);
         usernameField.setMargin(new Insets(0, 10, 0, 10));
         usernameField.setColumns(20);
         usernameField.setCaretColor(Color.BLACK);
         usernameField.setForeground(Color.BLACK);
-        usernameField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(),
-            BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true)
-        ));
-        usernameField.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
-            @Override
-            protected void paintSafely(Graphics g) {
-                super.paintSafely(g);
-                ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-        });
         registerPanel.add(usernameField);
 
+        // Password
         JLabel passLabel = new JLabel("Password");
         passLabel.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
         passLabel.setBounds(70, 240, 100, 20);
@@ -285,29 +246,29 @@ public class Main {
         passwordField.setBackground(Color.WHITE);
         passwordField.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         passwordField.setOpaque(true);
-        passwordField.setBorder(BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true));
         passwordField.setMargin(new Insets(0, 10, 0, 10));
         passwordField.setCaretColor(Color.BLACK);
         passwordField.setForeground(Color.BLACK);
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(),
-            BorderFactory.createLineBorder(new Color(186, 129, 97), 0, true)
-        ));
-        passwordField.setUI(new javax.swing.plaf.basic.BasicPasswordFieldUI() {
-            @Override
-            protected void paintSafely(Graphics g) {
-                super.paintSafely(g);
-                ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-        });
         registerPanel.add(passwordField);
+
+        // Jenis Kelamin
+        JLabel genderLabel = new JLabel("Jenis Kelamin:");
+        genderLabel.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
+        genderLabel.setBounds(70, 320, 120, 20);
+        registerPanel.add(genderLabel);
+
+        String[] genderOptions = {"Laki-laki", "Perempuan"};
+        JComboBox<String> genderCombo = new JComboBox<>(genderOptions);
+        genderCombo.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
+        genderCombo.setBounds(200, 315, 230, 30);
+        registerPanel.add(genderCombo);
 
         // Tombol Register
         JButton registerBtn = new JButton("Register");
         registerBtn.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
         registerBtn.setBackground(new Color(30, 60, 120));
         registerBtn.setForeground(Color.WHITE);
-        registerBtn.setBounds(70, 330, 360, 50);
+        registerBtn.setBounds(70, 370, 360, 50);
         registerBtn.setFocusPainted(false);
         registerBtn.setBorder(BorderFactory.createEmptyBorder());
         registerBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -318,13 +279,14 @@ public class Main {
         registerBtn.addActionListener(_ -> {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
+            String selectedGender = (String) genderCombo.getSelectedItem();
 
             if (username.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(registerFrame, "Username dan password tidak boleh kosong!");
                 return;
             }
 
-            if (AuthService.register(username, password)) {
+            if (AuthService.register(username, password, selectedGender)) {
                 JOptionPane.showMessageDialog(registerFrame, "Registrasi berhasil!");
                 registerFrame.dispose();
                 showLoginScreen();

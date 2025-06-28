@@ -14,7 +14,8 @@ public class DatabaseHelper {
             stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "username TEXT UNIQUE," +
-                    "password TEXT)");
+                    "password TEXT," +
+                    "gender TEXT)");
 
             // Tabel moods
             stmt.execute("CREATE TABLE IF NOT EXISTS moods (" +
@@ -93,5 +94,35 @@ public class DatabaseHelper {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public static boolean registerUser(String username, String password, String gender) {
+        String sql = "INSERT INTO users (username, password, gender) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.setString(3, gender);
+            stmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static String getGenderByUsername(String username) {
+        String sql = "SELECT gender FROM users WHERE username = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("gender");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "Laki-laki"; // default
     }
 }

@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import org.json.JSONObject;
 
 public class SentimentClient {
     public static int getSentiment(String text) throws Exception {
@@ -18,8 +19,9 @@ public class SentimentClient {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         String body = response.body();
-        // Ambil nilai stars dari response JSON
-        int stars = Integer.parseInt(body.replaceAll("[^0-9]", ""));
+        // Ambil nilai stars dari response JSON dengan parsing yang benar
+        JSONObject obj = new JSONObject(body);
+        int stars = obj.getInt("stars");
         return stars;
     }
 
