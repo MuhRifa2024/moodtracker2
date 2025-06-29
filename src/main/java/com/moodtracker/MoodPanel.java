@@ -4,17 +4,82 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.data.category.DefaultCategoryDataset;
+import java.util.List;
+import javax.swing.table.DefaultTableCellRenderer;
+// import org.jfree.chart.ChartFactory;
+// import org.jfree.chart.ChartPanel;
+// import org.jfree.chart.JFreeChart;
+// import org.jfree.chart.plot.CategoryPlot;
+// import org.jfree.chart.renderer.category.BarRenderer;
+// import org.jfree.data.category.DefaultCategoryDataset;
+// import java.util.stream.Collectors;
 
 public class MoodPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
+
     private JTextArea catatan;
     private String currentUser;
     private String currentGender;
+
+    // Mapping emosi ke kategori mood
+    private static final Map<String, String> EMOTION_TO_CATEGORY = Map.ofEntries(
+        Map.entry("gembira", "very positive"),
+        Map.entry("bersemangat", "very positive"),
+        Map.entry("bersyukur", "very positive"),
+        Map.entry("senang", "very positive"),
+        Map.entry("bahagia", "positive"),
+        Map.entry("tenang", "positive"),
+        Map.entry("puas", "positive"),
+        Map.entry("netral", "neutral"),
+        Map.entry("biasa saja", "neutral"),
+        Map.entry("bosan", "neutral"),
+        Map.entry("mengantuk", "neutral"),
+        Map.entry("sedih", "negative"),
+        Map.entry("cemas", "negative"),
+        Map.entry("kesepian", "negative"),
+        Map.entry("marah", "very negative"),
+        Map.entry("frustrasi", "very negative"),
+        Map.entry("putus asa", "very negative")
+    );
+
+    // Motivasi dua baris per kategori
+    private static final Map<String, List<String[]>> MOTIVASI_PER_KATEGORI = Map.of(
+        "very positive", List.of(
+            new String[]{"Pertahankan semangatmu hari ini!", "Terus tebarkan energi positif ke sekitarmu."},
+            new String[]{"Kamu luar biasa, teruskan!", "Jangan lupa bersyukur atas kebahagiaanmu."},
+            new String[]{"Energi positifmu menular!", "Semoga hari-harimu selalu ceria."},
+            new String[]{"Hari ini penuh kebahagiaan!", "Bagikan senyummu pada dunia."},
+            new String[]{"Jangan lupa bersyukur atas kebahagiaanmu!", "Kebahagiaanmu adalah inspirasi bagi orang lain."}
+        ),
+        "positive", List.of(
+            new String[]{"Nikmati hari yang indah ini.", "Syukuri setiap hal kecil hari ini."},
+            new String[]{"Tetap tenang dan terus maju.", "Kamu sudah melakukan yang terbaik."},
+            new String[]{"Kamu sudah melakukan yang terbaik.", "Teruskan langkah positifmu!"},
+            new String[]{"Syukuri setiap hal kecil hari ini.", "Hari baik dimulai dari hati yang tenang."},
+            new String[]{"Teruskan langkah positifmu!", "Semoga harimu penuh kedamaian."}
+        ),
+        "neutral", List.of(
+            new String[]{"Hari biasa juga penting untuk istirahat.", "Gunakan waktu ini untuk refleksi diri."},
+            new String[]{"Tidak apa-apa jika harimu biasa saja.", "Besok bisa jadi lebih baik!"},
+            new String[]{"Gunakan waktu ini untuk refleksi diri.", "Tetap jalani hari dengan santai."},
+            new String[]{"Besok bisa jadi lebih baik!", "Setiap hari punya cerita sendiri."},
+            new String[]{"Tetap jalani hari dengan santai.", "Nikmati momen sederhana hari ini."}
+        ),
+        "negative", List.of(
+            new String[]{"Tidak apa-apa merasa sedih, kamu tidak sendiri.", "Ceritakan perasaanmu pada orang terdekat."},
+            new String[]{"Ceritakan perasaanmu pada orang terdekat.", "Semua akan berlalu, tetap kuat."},
+            new String[]{"Semua akan berlalu, tetap kuat.", "Ambil waktu untuk dirimu sendiri."},
+            new String[]{"Ambil waktu untuk dirimu sendiri.", "Kamu berharga, apapun yang terjadi."},
+            new String[]{"Kamu berharga, apapun yang terjadi.", "Jangan ragu untuk meminta bantuan."}
+        ),
+        "very negative", List.of(
+            new String[]{"Tarik napas dalam-dalam, kamu bisa melewati ini.", "Jangan menyerah, hari buruk akan berlalu."},
+            new String[]{"Jangan menyerah, hari buruk akan berlalu.", "Cari bantuan jika kamu butuh, itu bukan kelemahan."},
+            new String[]{"Cari bantuan jika kamu butuh, itu bukan kelemahan.", "Kamu lebih kuat dari yang kamu kira."},
+            new String[]{"Kamu lebih kuat dari yang kamu kira.", "Ingat, selalu ada harapan di setiap situasi."},
+            new String[]{"Ingat, selalu ada harapan di setiap situasi.", "Kamu tidak sendiri, tetap bertahan."}
+        )
+    );
 
     public MoodPanel(String currentUser, String currentGender) {
         this.currentUser = currentUser;
@@ -38,13 +103,13 @@ public class MoodPanel extends JPanel {
         g2d.fillRect(0, 0, w, h);
     }
 
-    private void saveMood(String mood, String note) {
+    private void saveMood(String mood, String emosiAsli, String note) {
         String date = new SimpleDateFormat("dd-MM-yyyy HH:mm").format(new Date());
-        DatabaseHelper.insertMood(currentUser, mood, note, date);
+        DatabaseHelper.insertMood(currentUser, mood, emosiAsli, note, date);
         catatan.setText("");
     }
 
-    private void showResult(String moodLabel) {
+    private void showResult(String moodLabel, String emosiAsli) {
         removeAll();
         setLayout(new BorderLayout());
 
@@ -60,9 +125,14 @@ public class MoodPanel extends JPanel {
 
         // Logo
         JLabel logoLabel = new JLabel();
-        ImageIcon logoIcon = new ImageIcon(getClass().getResource("/assets/logo.png"));
-        Image logoImage = logoIcon.getImage().getScaledInstance(249, 124, Image.SCALE_SMOOTH);
-        logoLabel.setIcon(new ImageIcon(logoImage));
+        java.net.URL logoUrl = getClass().getResource("/assets/logo.png");
+        if (logoUrl != null) {
+            ImageIcon logoIcon = new ImageIcon(logoUrl);
+            Image logoImage = logoIcon.getImage().getScaledInstance(249, 124, Image.SCALE_SMOOTH);
+            logoLabel.setIcon(new ImageIcon(logoImage));
+        } else {
+            logoLabel.setText("Logo tidak ditemukan");
+        }
         logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         leftPanel.add(logoLabel);
 
@@ -110,44 +180,41 @@ public class MoodPanel extends JPanel {
         // Mapping label sentimen ke gambar dan teks
         String genderSuffix = currentGender.equalsIgnoreCase("Perempuan") ? "_f" : "_m";
         String karakterPath;
-        String moodText; // <-- Tambahkan inisialisasi moodText
-
         switch (moodLabel.toLowerCase()) {
             case "very negative":
                 karakterPath = "/assets/angry" + genderSuffix + ".png";
-                moodText = "Marah";
                 break;
             case "negative":
                 karakterPath = "/assets/sad" + genderSuffix + ".png";
-                moodText = "Sedih";
                 break;
             case "neutral":
                 karakterPath = "/assets/neutral" + genderSuffix + ".png";
-                moodText = "Netral";
                 break;
             case "positive":
                 karakterPath = "/assets/happy" + genderSuffix + ".png";
-                moodText = "Bahagia";
                 break;
             case "very positive":
                 karakterPath = "/assets/very_happy" + genderSuffix + ".png";
-                moodText = "Sangat Bahagia";
                 break;
             default:
                 karakterPath = "/assets/neutral" + genderSuffix + ".png";
-                moodText = moodLabel;
         }
 
         // Karakter (tengah)
         JLabel karakterLabel = new JLabel();
-        ImageIcon karakterIcon = new ImageIcon(getClass().getResource(karakterPath));
-        Image karakterImg = karakterIcon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
-        karakterLabel.setIcon(new ImageIcon(karakterImg));
+        java.net.URL karakterUrl = getClass().getResource(karakterPath);
+        if (karakterUrl != null) {
+            ImageIcon karakterIcon = new ImageIcon(karakterUrl);
+            Image karakterImg = karakterIcon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
+            karakterLabel.setIcon(new ImageIcon(karakterImg));
+        } else {
+            karakterLabel.setText("Gambar tidak ditemukan");
+        }
         karakterLabel.setBounds(400, 80, 250, 250);
         centerPanel.add(karakterLabel);
 
-        // Label mood kanan atas
-        JLabel moodLabelText = new JLabel(moodText);
+        // Ganti label mood kanan atas:
+        JLabel moodLabelText = new JLabel(emosiAsli != null && !emosiAsli.isEmpty() ? capitalize(emosiAsli) : capitalize(moodLabel));
         moodLabelText.setFont(new Font("Comic Sans MS", Font.BOLD, 28));
         moodLabelText.setBounds(700, 120, 400, 40);
         centerPanel.add(moodLabelText);
@@ -159,12 +226,21 @@ public class MoodPanel extends JPanel {
         bottomPanel.setOpaque(false);
         bottomPanel.setPreferredSize(new Dimension(1000, 100));
 
-        JLabel pesan1 = new JLabel("Ayoo semangat!!!");
+        // Pilih motivasi random sesuai kategori
+        List<String[]> motivasiList = MOTIVASI_PER_KATEGORI.getOrDefault(
+            moodLabel.toLowerCase(),
+            new ArrayList<String[]>() {{
+                add(new String[]{"Semangat menjalani hari!", "Semoga harimu lebih baik dan kamu lebih bahagia"});
+            }}
+        );
+        String[] motivasiRandom = motivasiList.get(new Random().nextInt(motivasiList.size()));
+
+        JLabel pesan1 = new JLabel(motivasiRandom[0]);
         pesan1.setFont(new Font("Comic Sans MS", Font.BOLD, 26));
-        pesan1.setBounds(80, 10, 600, 40);
+        pesan1.setBounds(80, 10, 800, 40);
         bottomPanel.add(pesan1);
 
-        JLabel pesan2 = new JLabel("Semoga harimu lebih baik dan kamu lebih bahagia");
+        JLabel pesan2 = new JLabel(motivasiRandom[1]);
         pesan2.setFont(new Font("Arial", Font.PLAIN, 22));
         pesan2.setBounds(80, 50, 800, 30);
         bottomPanel.add(pesan2);
@@ -177,11 +253,22 @@ public class MoodPanel extends JPanel {
         });
 
         btnRiwayat.addActionListener(_ -> {
-            showRiwayatMoodChart();
+            showRiwayatMoodTable();
         });
 
         revalidate();
         repaint();
+    }
+
+    // Fungsi deteksi mood berdasarkan kata kunci emosi
+    private String detectMoodByKeyword(String note) {
+        String lower = note.toLowerCase();
+        for (Map.Entry<String, String> entry : EMOTION_TO_CATEGORY.entrySet()) {
+            if (lower.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null; // Tidak ditemukan, lanjut ke SentimentClient
     }
 
     // Panel input mood (form awal)
@@ -198,9 +285,14 @@ public class MoodPanel extends JPanel {
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         logoPanel.setOpaque(false);
         JLabel logoLabel = new JLabel();
-        ImageIcon logoIcon = new ImageIcon(getClass().getResource("/assets/logo.png"));
-        Image logoImage = logoIcon.getImage().getScaledInstance(249, 124, Image.SCALE_SMOOTH);
-        logoLabel.setIcon(new ImageIcon(logoImage));
+        java.net.URL logoUrl = getClass().getResource("/assets/logo.png");
+        if (logoUrl != null) {
+            ImageIcon logoIcon = new ImageIcon(logoUrl);
+            Image logoImage = logoIcon.getImage().getScaledInstance(249, 124, Image.SCALE_SMOOTH);
+            logoLabel.setIcon(new ImageIcon(logoImage));
+        } else {
+            logoLabel.setText("Logo tidak ditemukan");
+        }
         logoPanel.add(logoLabel);
         topPanel.add(logoPanel);
 
@@ -262,20 +354,25 @@ public class MoodPanel extends JPanel {
         saveButton.addActionListener(_ -> {
             String note = catatan.getText().trim();
             if (note.equals("Tulis Perasaanmu hari ini.....") || note.isEmpty()) {
-                note = "";
+                JOptionPane.showMessageDialog(this, "Silakan tulis perasaanmu terlebih dahulu.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            String hasilSentimen = "";
-            System.out.println("Input ke SentimentClient: " + note);
-            try {
-                int stars = SentimentClient.getSentiment(note);
-                hasilSentimen = SentimentClient.mapStarsToLabel(stars);
-                System.out.println("Sentimen catatan: " + hasilSentimen);
-            } catch (Exception ex) {
-                hasilSentimen = "neutral";
-                ex.printStackTrace();
+            String hasilSentimen = detectMoodByKeyword(note);
+            String emosiAsli = detectEmotionKeyword(note);
+            if (hasilSentimen == null) {
+                try {
+                    int stars = SentimentClient.getSentiment(note);
+                    hasilSentimen = SentimentClient.mapStarsToLabel(stars);
+                    // emosiAsli = hasilSentimen; // <-- ini salah, karena hasilSentimen adalah kategori!
+                    emosiAsli = ""; // atau null, agar label tidak menampilkan kategori
+                } catch (Exception ex) {
+                    hasilSentimen = "neutral";
+                    emosiAsli = "";
+                    ex.printStackTrace();
+                }
             }
-            saveMood(hasilSentimen, note);
-            showResult(hasilSentimen);
+            saveMood(hasilSentimen, emosiAsli, note);
+            showResult(hasilSentimen, emosiAsli);
         });
 
         centerPanel.add(Box.createVerticalStrut(30));
@@ -289,39 +386,34 @@ public class MoodPanel extends JPanel {
         repaint();
     }
 
-
-    private void showRiwayatMoodChart() {
+    private void showRiwayatMoodTable(String filterTanggal) {
         removeAll();
         setLayout(null);
 
-        // Logo kiri atas
-        JLabel logoLabel = new JLabel();
-        ImageIcon logoIcon = new ImageIcon(getClass().getResource("/assets/logo.png"));
-        Image logoImage = logoIcon.getImage().getScaledInstance(120, 60, Image.SCALE_SMOOTH);
-        logoLabel.setIcon(new ImageIcon(logoImage));
-        logoLabel.setBounds(30, 20, 120, 60);
-        add(logoLabel);
-
-        // Judul
+        // Judul dan filter
         JLabel titleLabel = new JLabel("Riwayat Mood");
         titleLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 38));
-        titleLabel.setBounds(40, 90, 350, 50);
+        titleLabel.setBounds(40, 40, 350, 50);
         add(titleLabel);
 
-        // Subjudul
-        JLabel subTitle = new JLabel("Hari ini");
+        JLabel subTitle = new JLabel("Tanggal: " + filterTanggal);
         subTitle.setFont(new Font("Arial", Font.PLAIN, 20));
-        subTitle.setBounds(50, 135, 200, 30);
+        subTitle.setBounds(50, 90, 300, 30);
         add(subTitle);
 
-        // Ikon filter
+        // Filter icon
         JLabel filterIcon = new JLabel();
-        ImageIcon filterImg = new ImageIcon(getClass().getResource("/assets/filter.png"));
-        filterIcon.setIcon(new ImageIcon(filterImg.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH)));
-        filterIcon.setBounds(350, 90, 40, 40);
+        java.net.URL filterUrl = getClass().getResource("/assets/filter.png");
+        if (filterUrl != null) {
+            ImageIcon filterImg = new ImageIcon(filterUrl);
+            filterIcon.setIcon(new ImageIcon(filterImg.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH)));
+        } else {
+            filterIcon.setText("Filter");
+        }
+        filterIcon.setBounds(350, 40, 40, 40);
         add(filterIcon);
 
-        // Tombol kembali kanan atas
+        // Tombol kembali
         JButton btnKembali = new JButton("KEMBALI");
         btnKembali.setFont(new Font("Arial", Font.BOLD, 18));
         btnKembali.setBackground(new Color(255, 200, 210));
@@ -330,82 +422,68 @@ public class MoodPanel extends JPanel {
         btnKembali.addActionListener(_ -> initInputMoodPanel());
         add(btnKembali);
 
-        // === DATA DARI DATABASE ===
-        java.util.List<String[]> data = DatabaseHelper.getMoodHistory(currentUser);
-
-        // Ambil semua kategori mood unik dari data (urutkan sesuai urutan kemunculan)
-        LinkedHashSet<String> moodSet = new LinkedHashSet<>();
+        // Ambil data dari database
+        List<String[]> data = DatabaseHelper.getMoodHistory(currentUser)
+            .stream()
+            .collect(java.util.stream.Collectors.toList());
+        System.out.println("Jumlah data: " + data.size());
         for (String[] row : data) {
-            moodSet.add(row[0].toUpperCase());
-        }
-        java.util.List<String> moodCategories = new ArrayList<>(moodSet);
-
-        // Mapping mood ke nilai Y
-        java.util.Map<String, Integer> moodToValue = new HashMap<>();
-        for (int i = 0; i < moodCategories.size(); i++) {
-            moodToValue.put(moodCategories.get(i).toLowerCase(), i + 1);
+            System.out.println(Arrays.toString(row));
         }
 
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        for (String[] row : data) {
-            String mood = row[0].toLowerCase();
-            String tanggal = row[2]; // format: dd-MM-yyyy HH:mm
-            String jam = tanggal.split(" ")[1]; // ambil HH:mm
-            int value = moodToValue.getOrDefault(mood, 1);
-            dataset.addValue(value, mood, jam);
-        }
+        // Kolom tabel
+        String[] columnNames = {"Mood", "Emosi Asli", "Catatan", "Tanggal"};
+        String[][] tableData = data.toArray(new String[0][]);
 
-        JFreeChart barChart = ChartFactory.createBarChart(
-            "", // title
-            "", // category axis label
-            "", // value axis label
-            dataset
-        );
+        JTable table = new JTable(tableData, columnNames);
+        table.setFont(new Font("Arial", Font.PLAIN, 16));
+        table.setRowHeight(28);
+        table.setOpaque(false);
+        ((DefaultTableCellRenderer)table.getDefaultRenderer(Object.class)).setOpaque(false);
 
-        // Customisasi chart agar mirip desain
-        CategoryPlot plot = barChart.getCategoryPlot();
-        plot.setBackgroundPaint(new Color(0,0,0,0)); // transparan
-        plot.setOutlineVisible(false);
-        plot.setRangeGridlinesVisible(false);
-        plot.getDomainAxis().setTickLabelFont(new Font("Arial", Font.PLAIN, 18));
-        plot.getRangeAxis().setTickLabelFont(new Font("Arial", Font.PLAIN, 18));
-        plot.getDomainAxis().setCategoryMargin(0.2);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBounds(60, 140, 1000, 400);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        add(scrollPane);
 
-        // Sembunyikan label angka sumbu Y
-        plot.getRangeAxis().setTickLabelsVisible(false);
-        plot.getRangeAxis().setRange(0, moodCategories.size() + 0.5);
-
-        // Custom warna bar
-        BarRenderer renderer = (BarRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, new Color(40, 30, 60));
-        renderer.setBarPainter(new BarRenderer().getBarPainter());
-        renderer.setShadowVisible(false);
-
-        // Panel chart
-        ChartPanel chartPanel = new ChartPanel(barChart);
-        chartPanel.setOpaque(false);
-        chartPanel.setBackground(new Color(0,0,0,0));
-        chartPanel.setBounds(60, 180, 900, 400);
-        chartPanel.setBorder(BorderFactory.createEmptyBorder());
-        add(chartPanel);
-
-        // Custom label sumbu Y manual (dinamis)
-        int chartHeight = 400;
-        int chartBottom = 580;
-        int yStep = moodCategories.size() > 1 ? chartHeight / (moodCategories.size() - 1) : chartHeight;
-        for (int i = 0; i < moodCategories.size(); i++) {
-            JLabel yLabel = new JLabel(moodCategories.get(i));
-            yLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-            yLabel.setBounds(10, chartBottom - i * yStep, 180, 30);
-            add(yLabel);
-        }
-
-        // FILTER ICON INTERAKTIF
+        // Filter interaktif
         filterIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         filterIcon.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                JOptionPane.showMessageDialog(null, "Fitur filter belum diimplementasikan.");
+                String[] options = {"Hari ini", "Kemarin", "Pilih Tanggal..."};
+                int choice = JOptionPane.showOptionDialog(
+                    null,
+                    "Tampilkan riwayat mood:",
+                    "Filter Riwayat",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0]
+                );
+                String filterTanggal = null;
+                if (choice == 0) {
+                    filterTanggal = new java.text.SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date());
+                } else if (choice == 1) {
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.add(java.util.Calendar.DATE, -1);
+                    filterTanggal = new java.text.SimpleDateFormat("dd-MM-yyyy").format(cal.getTime());
+                } else if (choice == 2) {
+                    JSpinner dateSpinner = new JSpinner(new SpinnerDateModel());
+                    dateSpinner.setEditor(new JSpinner.DateEditor(dateSpinner, "dd-MM-yyyy"));
+                    int result = JOptionPane.showOptionDialog(
+                        null, dateSpinner, "Pilih Tanggal", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null
+                    );
+                    if (result == JOptionPane.OK_OPTION) {
+                        java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+                        filterTanggal = new java.text.SimpleDateFormat("dd-MM-yyyy").format(selectedDate);
+                    }
+                }
+                if (filterTanggal != null && !filterTanggal.isEmpty()) {
+                    showRiwayatMoodTable(filterTanggal);
+                }
             }
         });
 
@@ -413,16 +491,37 @@ public class MoodPanel extends JPanel {
         repaint();
     }
 
-    public static void main(String[] args) {
-        // Contoh penggunaan SentimentClient
-        String kalimat = "Saya sangat senang hari ini!";
+    // Ganti pemanggilan showRiwayatMoodChart() menjadi showRiwayatMoodTable()
+    private void showRiwayatMoodTable() {
+        String today = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+        showRiwayatMoodTable(today);
+    }
 
-        try {
-            int stars = SentimentClient.getSentiment(kalimat);
-            String label = SentimentClient.mapStarsToLabel(stars);
-            System.out.println("Hasil sentimen: " + label + " (" + stars + " stars)");
-        } catch (Exception e) {
-            e.printStackTrace();
+    // Fungsi deteksi emosi dari kata kunci
+    private String detectEmotionKeyword(String note) {
+        String lower = note.toLowerCase();
+        for (String keyword : EMOTION_TO_CATEGORY.keySet()) {
+            if (lower.contains(keyword)) {
+                return keyword;
+            }
         }
+        return null;
+    }
+
+    // Fungsi bantu kapitalisasi
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    // Untuk testing mandiri (opsional)
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Mood Tracker");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(new MoodPanel("tester", "Laki-laki"));
+            frame.setSize(1200, 800);
+            frame.setVisible(true);
+        });
     }
 }

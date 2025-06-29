@@ -5,11 +5,14 @@ import java.awt.*;
 
 public class Main {
     public static void main(String[] args) {
-        DatabaseHelper.initDatabase();
-        showLoginScreen();
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            DatabaseHelper.initDatabase();
+            showLoginScreen();
+        });
     }
 
     private static void showLoginScreen() {
+        System.out.println("Menampilkan login screen...");
         JFrame loginFrame = new JFrame("Login");
         loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         loginFrame.setSize(700, 600);
@@ -47,7 +50,7 @@ public class Main {
 
         // Logo
         JLabel logoLabel = new JLabel();
-        ImageIcon logoIcon = new ImageIcon("src/MoodTrackerApp/assets/logo.png");
+        ImageIcon logoIcon = new ImageIcon(Main.class.getResource("/assets/logo.png"));
         Image logoImage = logoIcon.getImage().getScaledInstance(259, 134, Image.SCALE_SMOOTH);
         logoLabel.setIcon(new ImageIcon(logoImage));
         logoLabel.setBounds(120, 5, 259, 134);
@@ -203,7 +206,7 @@ public class Main {
 
         // Logo
         JLabel logoLabel = new JLabel();
-        ImageIcon logoIcon = new ImageIcon("src/MoodTrackerApp/assets/logo.png");
+        ImageIcon logoIcon = new ImageIcon(Main.class.getResource("/assets/logo.png"));
         Image logoImage = logoIcon.getImage().getScaledInstance(259, 134, Image.SCALE_SMOOTH);
         logoLabel.setIcon(new ImageIcon(logoImage));
         logoLabel.setBounds(120, 5, 259, 134);

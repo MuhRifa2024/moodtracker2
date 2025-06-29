@@ -22,6 +22,7 @@ public class DatabaseHelper {
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "user TEXT," +
                     "mood TEXT," +
+                    "emosi_asli TEXT," + // tambahkan kolom ini
                     "note TEXT," +
                     "date TEXT)");
         } catch (SQLException e) {
@@ -36,19 +37,20 @@ public class DatabaseHelper {
         return DriverManager.getConnection(url);
     }
 
-    public static void insertMood(String user, String mood, String note, String date) {
-        String sql = "INSERT INTO moods (user, mood, note, date) VALUES (?, ?, ?, ?)";
+    public static void insertMood(String user, String mood, String emosiAsli, String note, String date) {
+        String sql = "INSERT INTO moods (user, mood, emosi_asli, note, date) VALUES (?, ?, ?, ?, ?)";
 
         System.out.println("Query INSERT: " + sql);
-        System.out.println("Parameter: user=" + user + ", mood=" + mood + ", note=" + note + ", date=" + date);
+        System.out.println("Parameter: user=" + user + ", mood=" + mood + ", emosiAsli=" + emosiAsli + ", note=" + note + ", date=" + date);
 
         try (Connection conn = getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user);
             stmt.setString(2, mood);
-            stmt.setString(3, note);
-            stmt.setString(4, date);
+            stmt.setString(3, emosiAsli);
+            stmt.setString(4, note);
+            stmt.setString(5, date);
             stmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error saat menyimpan mood: " + e.getMessage());
@@ -57,16 +59,17 @@ public class DatabaseHelper {
 
     public static java.util.List<String[]> getMoodHistory(String username) {
         List<String[]> list = new ArrayList<>();
-        String sql = "SELECT mood, note, date FROM moods WHERE user = ? ORDER BY date DESC";
+        String sql = "SELECT mood, emosi_asli, note, date FROM moods WHERE user = ? ORDER BY date ASC";
         try (Connection conn = getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 list.add(new String[] {
-                        rs.getString("mood"),
-                        rs.getString("note"),
-                        rs.getString("date")
+                    rs.getString("mood"),
+                    rs.getString("emosi_asli"),
+                    rs.getString("note"),
+                    rs.getString("date")
                 });
             }
         } catch (SQLException e) {
