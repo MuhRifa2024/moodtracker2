@@ -81,6 +81,10 @@ public class MoodPanel extends JPanel {
         )
     );
 
+    // Tambahan variabel untuk menyimpan hasil mood terakhir
+    private String lastMoodLabel = null;
+    private String lastEmosiAsli = null;
+
     public MoodPanel(String currentUser, String currentGender) {
         this.currentUser = currentUser;
         this.currentGender = currentGender;
@@ -110,6 +114,10 @@ public class MoodPanel extends JPanel {
     }
 
     private void showResult(String moodLabel, String emosiAsli) {
+        // Simpan hasil terakhir
+        lastMoodLabel = moodLabel;
+        lastEmosiAsli = emosiAsli;
+
         removeAll();
         setLayout(new BorderLayout());
 
@@ -388,20 +396,27 @@ public class MoodPanel extends JPanel {
 
     private void showRiwayatMoodTable(String filterTanggal) {
         removeAll();
-        setLayout(null);
+        setLayout(new BorderLayout());
 
-        // Judul dan filter
+        // Panel judul dan filter
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+        topPanel.setPreferredSize(new Dimension(getWidth(), 140));
+
+        JPanel leftPanel = new JPanel(null);
+        leftPanel.setOpaque(false);
+        leftPanel.setPreferredSize(new Dimension(600, 140));
+
         JLabel titleLabel = new JLabel("Riwayat Mood");
         titleLabel.setFont(new Font("Comic Sans MS", Font.BOLD, 38));
         titleLabel.setBounds(40, 40, 350, 50);
-        add(titleLabel);
+        leftPanel.add(titleLabel);
 
         JLabel subTitle = new JLabel("Tanggal: " + filterTanggal);
         subTitle.setFont(new Font("Arial", Font.PLAIN, 20));
         subTitle.setBounds(50, 90, 300, 30);
-        add(subTitle);
+        leftPanel.add(subTitle);
 
-        // Filter icon
         JLabel filterIcon = new JLabel();
         java.net.URL filterUrl = getClass().getResource("/assets/filter.png");
         if (filterUrl != null) {
@@ -411,21 +426,44 @@ public class MoodPanel extends JPanel {
             filterIcon.setText("Filter");
         }
         filterIcon.setBounds(350, 40, 40, 40);
-        add(filterIcon);
+        leftPanel.add(filterIcon);
 
-        // Tombol kembali
+        topPanel.add(leftPanel, BorderLayout.WEST);
+
+        // Tombol kembali di pojok kanan atas
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 30));
+        rightPanel.setOpaque(false);
         JButton btnKembali = new JButton("KEMBALI");
         btnKembali.setFont(new Font("Arial", Font.BOLD, 18));
         btnKembali.setBackground(new Color(255, 200, 210));
-        btnKembali.setBounds(900, 30, 150, 40);
         btnKembali.setFocusPainted(false);
-        btnKembali.addActionListener(_ -> initInputMoodPanel());
-        add(btnKembali);
+        btnKembali.addActionListener(_ -> {
+            if (lastMoodLabel != null) {
+                showResult(lastMoodLabel, lastEmosiAsli);
+            } else {
+                initInputMoodPanel();
+            }
+        });
+        rightPanel.add(btnKembali);
+        topPanel.add(rightPanel, BorderLayout.EAST);
+
+        add(topPanel, BorderLayout.NORTH);
 
         // Ambil data dari database
         List<String[]> data = DatabaseHelper.getMoodHistory(currentUser)
             .stream()
             .collect(java.util.stream.Collectors.toList());
+        // Urutkan data berdasarkan tanggal terbaru di urutan pertama
+        data.sort((a, b) -> {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+                Date dateA = sdf.parse(a[3]);
+                Date dateB = sdf.parse(b[3]);
+                return dateB.compareTo(dateA); // descending
+            } catch (Exception e) {
+                return 0;
+            }
+        });
         System.out.println("Jumlah data: " + data.size());
         for (String[] row : data) {
             System.out.println(Arrays.toString(row));
@@ -442,10 +480,23 @@ public class MoodPanel extends JPanel {
         ((DefaultTableCellRenderer)table.getDefaultRenderer(Object.class)).setOpaque(false);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBounds(60, 140, 1000, 400);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
-        add(scrollPane);
+        // Ukuran 80% dari panel
+        int panelWidth = (int) (getWidth() * 0.8);
+        int panelHeight = (int) (getHeight() * 0.8);
+        scrollPane.setPreferredSize(new Dimension(panelWidth, panelHeight));
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Responsif saat resize
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int w = (int) (getWidth() * 0.8);
+                int h = (int) (getHeight() * 0.8);
+                scrollPane.setPreferredSize(new Dimension(w, h));
+                revalidate();
+            }
+        });
 
         // Filter interaktif
         filterIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
